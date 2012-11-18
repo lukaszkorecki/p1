@@ -5,10 +5,12 @@ file = phantom.args[2];
 
 // probably doesn't need to be bigger
 page.viewportSize = { width: 1000, height: 600 };
+
+// setup console running in phantom/cli context
 page.onConsoleMessage = function (msg) { console.log('[p1] ' + msg);
 };
 
-// console running in browser context
+// setup console running in browser context
 page.onError = function (msg, trace) {
   console.log(msg);
   trace.forEach(function(item) { console.log('[1p] [err]  ', item.file, ':', item.line); });
@@ -23,26 +25,62 @@ page.open(keychain, function (status) {
     phantom.exit(1);
   } else {
     page.injectJs(pass_file);
-    window.setTimeout(function () {
-      // TODO this needs to be extracted and modularized or something
-      page.evaluate(function(){
-        console.log('woop!');
-        try {
+    // TODO this needs to be extracted and modularized or something
+    // 1password.html has jquery already so this should be
+    // easy
+    page.evaluate(function(){
 
-          var i = document.getElementById('masterPassword');
+        function logMeIn(password) {
+
+          var i = $('#masterPassword');
+          var s = $('#unlock');
           console.log(i);
-          var s = document.getElementById('unlock');
           console.log(s);
 
-          i.setAttribute('value', PASSWORD);
+          i.attr('value', password);
           s.click();
-        }catch(e) {
-          console.log(e);
         }
+
+        function searchAndGet(term) {
+          // use search box
+          $('#search').attr('value',term).keyup();
+          // results get listed, check how many there are
+          var results = $('#listPane li strong');
+          // we got some results
+          console.log([
+                      "Found",
+                      results.count,
+                      (results.count == 1? "item" : "items")
+          ].join(' '));
+          results.map(function(){
+            console.log(this.innerText);
+          });
+          console.log("Username / password for first result:");
+
+        }
+
+        function displayUsernameAndPassword() {
+
+          // TODO FIXME
+          // make this less hacky, ok?
+           trs = $($('#detailsPane tbody')[0]).find('tr');
+          var username = $(trs[1]).find('td')[1].innerText;
+          var password = $(trs[2]).
+            find('.revealButton').
+            attr('onclick').
+            toString().
+            split(',')[1].
+            trim().
+            replace(/^"/,'').replace(/"$/,'');
+          console.log(username + " | " + password);
+        }
+
+        $(function(){
+          logMeIn(PASSWORD);
       });
+    });
 
 
-    }, 1400);
     // FIXME this needs to be in debug only mode?
     window.setTimeout(function(){
       // we want some proof, right?

@@ -14,6 +14,7 @@ if [[ -z $1 ]]; then
   exit 1
 fi
 
+
 # detect which mktemp we're dealing with
 # and create a temporary file with .js extension
 __TmpFile ()
@@ -45,7 +46,7 @@ echo "PASSWORD='$master_pass';" > $t_file
 
 #... and we're back to normal mode
 echo 'ok... logging you in'
-phantomjs src/p1.js $t_file out.png
+phantomjs src/p1.js $t_file $1 out.png
 __phantom_exit_status=$?
 
 # whatevs
