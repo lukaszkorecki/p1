@@ -5,6 +5,14 @@ if [[ -n $p1_debug ]]; then
 
 fi
 
+if [[ -z $1 ]]; then
+  echo "Please provide a path to your 1Password.agilekeychain"
+  echo "Example:"
+  echo "If you 1Password.agilekeychain file is in Dropbox/1password"
+  echo "then invoke p1 with:"
+  echo "    p1 ~/Dropbox/1password"
+  exit 1
+fi
 
 # detect which mktemp we're dealing with
 # and create a temporary file with .js extension
