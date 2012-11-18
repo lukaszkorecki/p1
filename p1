@@ -1,10 +1,25 @@
 #!/usr/bin/env bash
+
+# lets be paranoid for a bit
 set -e
 if [[ -n $p1_debug ]]; then
   set -x
-
 fi
 
+# print everything to stderr so it can be easily filtered out
+# with p1 <args> 2>/dev/null
+prnt()
+{
+  echo $* 1>&2
+}
+
+# "asynchronously" remove tmp file injected into browser context
+cleanUp()
+{
+  sleep 7
+  rm $1 || true
+
+}
 if [[ -z $1 ]]; then
   echo "Please provide a path to your 1Password.agilekeychain"
   echo "Example:"
@@ -17,7 +32,7 @@ fi
 
 # detect which mktemp we're dealing with
 # and create a temporary file with .js extension
-__TmpFile ()
+makeTmpFile ()
 {
   local t_path=''
   t_path=$(mktemp -t p1 -q)
@@ -26,17 +41,15 @@ __TmpFile ()
   fi
 
   if [[ $? == 1 ]]; then
-    echo 'no mktemp!'
+    echo'no mktemp!'
     exit 1
   fi
 
   echo "$t_path.js"
 }
 
-# create tmp file
-
-t_file=$(__TmpFile)
-echo 'Enter your 1password Master Password:'
+t_file=$(makeTmpFile)
+printf 'Enter your 1password Master Password: '
 # mask user input
 stty_orig=`stty -g` stty -echo
 read master_pass
@@ -45,11 +58,16 @@ stty $stty_orig >/dev/null
 echo "PASSWORD='$master_pass';" > $t_file
 
 #... and we're back to normal mode
-echo 'ok... logging you in'
+prnt 'ok... logging you in'
+
+# ok, don't stop the script at this point because we will run in
+# all sorts of problems if we don't cleanup after ourselves
+
+set +e
+
+# phantom js has 7 seconds to start and load stuff
+cleanUp $t_file &
 phantomjs src/p1.js $t_file $1 out.png
-__phantom_exit_status=$?
 
-# whatevs
-rm $t_file || true
-
-exit $__phantom_exit_status
+# propagate js script exit status for greater justice
+exit $?
