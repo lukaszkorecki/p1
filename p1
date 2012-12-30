@@ -13,12 +13,19 @@ prnt()
   echo $* 1>&2
 }
 
-# "asynchronously" remove tmp file injected into browser context
+# lets be paranoid about this - fire delayed rm of a file which
+# stores the password after phantomjs has started
 cleanUp()
 {
   sleep 7
   rm $1 || true
 
+}
+
+cleanUpOnExit()
+{
+  prnt "Cleaning up"
+  rm $t_file 2>/dev/null || true
 }
 if [[ -z $1 ]]; then
   echo "Please provide a path to your 1Password.agilekeychain"
@@ -41,7 +48,7 @@ makeTmpFile ()
   fi
 
   if [[ $? == 1 ]]; then
-    echo'no mktemp!'
+    echo 'no mktemp!'
     exit 1
   fi
 
@@ -49,6 +56,9 @@ makeTmpFile ()
 }
 
 t_file=$(makeTmpFile)
+# remove the tmp fle on exit, C-c or any other way this could get aborted
+trap cleanUpOnExit EXIT
+
 printf 'Enter your 1password Master Password: '
 # mask user input
 stty_orig=`stty -g` stty -echo
