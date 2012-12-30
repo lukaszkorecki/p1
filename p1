@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 # lets be paranoid for a bit
 set -e
 if [[ -n $p1_debug ]]; then
@@ -18,7 +17,7 @@ prnt()
 cleanUp()
 {
   sleep 7
-  rm $1 || true
+  rm $t_file || true
 
 }
 
@@ -27,13 +26,25 @@ cleanUpOnExit()
   prnt "Cleaning up"
   rm $t_file 2>/dev/null || true
 }
-if [[ -z $1 ]]; then
+
+# TODO FIXME needs proper arg parsing and help message
+if [[ -z "$0" ]]; then
   echo "Please provide a path to your 1Password.agilekeychain"
   echo "Example:"
   echo "If you 1Password.agilekeychain file is in Dropbox/1password"
   echo "then invoke p1 with:"
   echo "    p1 ~/Dropbox/1password"
   exit 1
+fi
+
+if [[ "$*" = "-h" ]] ; then
+  echo "Usage: "
+  echo "   p1 <path to 1Password.agilekeychain> <search term>"
+  echo "Example: "
+  echo "   ./p1 ~/Dropbox/1password example.gmail.com"
+  echo "This will open your 1p keychain, type example.gmail.com and get "
+  echo "login and password for the first match and print it out"
+  exit 0
 fi
 
 
